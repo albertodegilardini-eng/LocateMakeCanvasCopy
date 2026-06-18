@@ -1470,9 +1470,9 @@ function MapView({ listings, onSelect, formatPrice, t }: {
         </div>
       </div>
 
-      {/* Additional UI enhancement: professional map intro bar */}
-      <div style={{ background: 'var(--color-surface-alt)', border: '1px solid var(--color-border)', borderRadius: '8px', padding: '8px 12px', marginBottom: '12px', fontSize: '11px', color: 'var(--color-text-muted)' }}>
-        Interacción: arrastra para mover, rueda para zoom, clic en torres o puntos para detalles. Filtros aplican en tiempo real.
+      {/* Additional UI enhancement: professional map intro bar with better styling */}
+      <div style={{ background: 'linear-gradient(90deg, var(--color-surface-alt), var(--color-surface))', border: '1px solid var(--color-border)', borderRadius: '8px', padding: '10px 14px', marginBottom: '12px', fontSize: '11px', color: 'var(--color-text-muted)', boxShadow: 'var(--shadow-sm)' }}>
+        <strong style={{ color: 'var(--color-text)' }}>Controles del mapa:</strong> Arrastra para mover • Rueda para zoom • Clic en torres/puntos para info • Filtros en vivo
       </div>
 
       <div className="map-container">
