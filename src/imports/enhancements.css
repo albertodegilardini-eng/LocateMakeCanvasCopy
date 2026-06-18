@@ -2886,7 +2886,8 @@ button:not([disabled]) {
   display: flex;
   gap: 0;
   padding: 14px;
-  background: #0b111a; /* subtle map dark inset */
+  background: #000000;
+  min-height: 520px;
 }
 
 .map-svg-wrap {
