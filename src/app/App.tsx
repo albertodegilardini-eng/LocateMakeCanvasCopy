@@ -89,7 +89,7 @@ function ScoreBar({ val, max = 100 }: { val: number; max?: number }) {
 
 function ListingDetailPanel({ listing, onClose }: { listing: Listing; onClose: () => void }) {
   const psm = Math.round(listing.price / listing.sqm);
-  const agentObj = currentAgents.find((a: any) => a.name === listing.agentName);
+  const agentObj = AGENTS.find((a: any) => a.name === listing.agentName);
   const [copied, setCopied] = useState(false);
 
   useEffect(() => {
@@ -99,7 +99,7 @@ function ListingDetailPanel({ listing, onClose }: { listing: Listing; onClose: (
   }, [onClose]);
 
   const copyScript = () => {
-    const scriptText = `He revisado ${currentListings.filter((l: any) => l.building === listing.building && l.id !== listing.id).length} comparables activos en ${listing.buildingLabel}. Con ${listing.dom} días en mercado, el rango actual justifica una apertura de ${fmt(listing.anchor!)}. ¿Están abiertos a trabajar dentro de ese rango?`;
+    const scriptText = `He revisado ${FALLBACK_LISTINGS.filter((l: any) => l.building === listing.building && l.id !== listing.id).length} comparables activos en ${listing.buildingLabel}. Con ${listing.dom} días en mercado, el rango actual justifica una apertura de ${fmt(listing.anchor!)}. ¿Están abiertos a trabajar dentro de ese rango?`;
     navigator.clipboard?.writeText(scriptText).then(() => {
       setCopied(true);
       setTimeout(() => setCopied(false), 1600);
@@ -226,7 +226,7 @@ function ListingDetailPanel({ listing, onClose }: { listing: Listing; onClose: (
                 </button>
               </div>
               <div className="detail-script">
-                "He revisado {currentListings.filter((l: any) => l.building === listing.building && l.id !== listing.id).length} comparables activos en {listing.buildingLabel}. Con {listing.dom} días en mercado, el rango actual justifica una apertura de {fmt(listing.anchor)}. ¿Están abiertos a trabajar dentro de ese rango?"
+                "He revisado {FALLBACK_LISTINGS.filter((l: any) => l.building === listing.building && l.id !== listing.id).length} comparables activos en {listing.buildingLabel}. Con {listing.dom} días en mercado, el rango actual justifica una apertura de {fmt(listing.anchor)}. ¿Están abiertos a trabajar dentro de ese rango?"
               </div>
             </div>
           )}
@@ -393,7 +393,7 @@ function Header({ activeView, onNav, theme, onTheme, onBot, onGuide, search, onS
 
 // ─── ListingCard ──────────────────────────────────────────────────────────────
 
-function ListingCard({ l, onClick }: { l: Listing; onClick: () => void }) {
+function ListingCard({ l, onClick, formatPrice }: { l: Listing; onClick: () => void; formatPrice: (n: number) => string }) {
   const psm = Math.round(l.price / l.sqm);
   const bc = BLDG_COLOR[l.building];
   return (
@@ -765,7 +765,7 @@ function OverviewView({ listings, allListings, filter, onFilter, onSelect, sortB
         </div>
       ) : (
         <div className="listings-grid" role="list">
-          {listings.map(l => <ListingCard key={l.id} l={l} onClick={() => onSelect(l)} />)}
+          {listings.map(l => <ListingCard key={l.id} l={l} onClick={() => onSelect(l)} formatPrice={formatPrice} />)}
         </div>
       )}
     </div>
@@ -1182,7 +1182,7 @@ function MapView() {
 
           {/* Legend */}
           <g transform="translate(40, 300)">
-            {currentBuildings.map((b: any, idx: number) => (
+            {BUILDINGS.map((b: any, idx: number) => (
               <g key={idx}>
                 <circle cx={idx * 180 + 20} cy="8" r="6" fill={b.color} />
                 <text x={idx * 180 + 34} y="12" fill="var(--color-text-muted)" fontSize="11">{b.label}</text>
@@ -1197,8 +1197,8 @@ function MapView() {
 
         {/* Quick info cards */}
         <div style={{ display: 'flex', gap: 12, marginTop: 12, flexWrap: 'wrap' }}>
-          {currentBuildings.map((b: any) => {
-            const listingCount = currentListings.filter((l: any) => l.building === b.id && (l.bedrooms === 2 || l.bedrooms === 3)).length;
+          {BUILDINGS.map((b: any) => {
+            const listingCount = FALLBACK_LISTINGS.filter((l: any) => l.building === b.id && (l.bedrooms === 2 || l.bedrooms === 3)).length;
             return (
               <div key={b.id} style={{ background: 'var(--color-surface)', padding: '10px 14px', borderRadius: 10, border: '1px solid var(--color-border)', minWidth: 180 }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
@@ -1425,6 +1425,7 @@ export default function App() {
 
   return (
     <div className="sf-app" data-theme={theme}>
+      <div style={{position:'fixed',top:0,left:0,zIndex:99999,background:'red',color:'white',padding:'8px 12px',fontSize:'18px',fontWeight:'bold'}}>APP_RENDERING_OK</div>
       <MarketPulseBar listings={filteredListings} formatPrice={formatPrice} />
       <Header 
         activeView={activeView} 
