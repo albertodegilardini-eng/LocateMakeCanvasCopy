@@ -1524,13 +1524,19 @@ function MapView({ listings, onSelect, formatPrice, t }: {
           </span>
         </div>
 
-        <div className="map-main">
-          {/* SVG Map */}
-          <div className="map-svg-wrap glass" style={{ minHeight: '520px', borderRadius: '16px', border: '1px solid rgba(255,255,255,0.06)' }}>
+        <div className="map-main" style={{minHeight: '620px'}}>
+          {/* SVG Map - Ultra-premium immersive centerpiece */}
+          <div className="map-svg-wrap glass" style={{ 
+            minHeight: '600px', 
+            borderRadius: '20px', 
+            border: '1px solid rgba(255,255,255,0.08)',
+            background: '#000000',
+            boxShadow: '0 20px 60px rgba(0,0,0,0.6), inset 0 1px 0 rgba(255,255,255,0.05)'
+          }}>
             <svg 
               width="100%" 
-              height="500" 
-              viewBox="0 0 900 500" 
+              height="600" 
+              viewBox="0 0 1000 600" 
               style={{ display: 'block' }}
               onMouseDown={handleMouseDown}
               onMouseMove={handleMouseMove}
@@ -1540,83 +1546,82 @@ function MapView({ listings, onSelect, formatPrice, t }: {
             >
               <defs>
                 <filter id="luminous-glow" x="-50%" y="-50%" width="200%" height="200%">
-                  <feGaussianBlur in="SourceGraphic" stdDeviation="4" result="coloredBlur"/>
+                  <feGaussianBlur in="SourceGraphic" stdDeviation="3" result="coloredBlur"/>
                   <feMerge>
                     <feMergeNode in="coloredBlur"/>
                     <feMergeNode in="SourceGraphic"/>
                   </feMerge>
                 </filter>
-                <linearGradient id="mapBg" x1="0%" y1="0%" x2="0%" y2="100%">
+                <linearGradient id="mapBase" x1="0%" y1="0%" x2="0%" y2="100%">
                   <stop offset="0%" stopColor="#000000"/>
                   <stop offset="100%" stopColor="#0a0a0a"/>
                 </linearGradient>
               </defs>
 
-              {/* Deep void black cinematic base */}
-              <rect x="0" y="0" width="900" height="500" rx="20" fill="url(#mapBg)" />
+              {/* Pure deep void black base */}
+              <rect x="0" y="0" width="1000" height="600" rx="24" fill="url(#mapBase)" />
 
-              {/* Elegant horizontal AV. SANTA FE bar - premium */}
-              <rect x="50" y="210" width="800" height="10" rx="5" fill="#1a1a1a" />
-              <rect x="50" y="210" width="800" height="3" rx="1.5" fill="#333" />
-              <text x="450" y="195" textAnchor="middle" fill="#555" fontSize="14" fontWeight="500" letterSpacing="6">AV. SANTA FE</text>
+              {/* Elegant horizontal AV. SANTA FE bar - sophisticated premium */}
+              <rect x="80" y="262" width="840" height="8" rx="4" fill="#111111" />
+              <rect x="80" y="262" width="840" height="2" rx="1" fill="#2a2a2a" />
+              <text x="500" y="248" textAnchor="middle" fill="#4a4a4a" fontSize="15" fontWeight="500" letterSpacing="7">AV. SANTA FE</text>
 
-              {/* Immersive Parque La Mexicana - refined with depth and accents */}
-              <ellipse cx="450" cy="320" rx="160" ry="95" fill="#0a1f1a" />
-              <ellipse cx="450" cy="320" rx="100" ry="55" fill="#0f2a24" opacity="0.85" />
-              {/* Luminous subtle details for premium feel */}
-              <circle cx="380" cy="280" r="6" fill="#22c55e" opacity="0.5" />
-              <circle cx="410" cy="295" r="4" fill="#22c55e" opacity="0.4" />
-              <circle cx="480" cy="285" r="5" fill="#22c55e" opacity="0.5" />
-              <text x="450" y="328" textAnchor="middle" fill="#4ade80" fontSize="13" fontWeight="600" letterSpacing="2">PARQUE LA MEXICANA</text>
+              {/* Refined immersive Parque La Mexicana */}
+              <ellipse cx="500" cy="385" rx="170" ry="100" fill="#0a1512" />
+              <ellipse cx="500" cy="385" rx="105" ry="58" fill="#0f221d" opacity="0.85" />
+              {/* Subtle luminous park details */}
+              <ellipse cx="430" cy="345" rx="28" ry="15" fill="#22c55e" opacity="0.08" />
+              <ellipse cx="560" cy="365" rx="22" ry="12" fill="#22c55e" opacity="0.07" />
+              <text x="500" y="392" textAnchor="middle" fill="#4ade80" fontSize="14" fontWeight="600" letterSpacing="2">PARQUE LA MEXICANA</text>
 
-              {/* Subtle refined cross streets for depth */}
-              <line x1="180" y1="80" x2="175" y2="380" stroke="#1a1a1a" strokeWidth="6" />
-              <line x1="550" y1="80" x2="555" y2="380" stroke="#1a1a1a" strokeWidth="6" />
-
-              {/* Elegant floating circular markers - higher-end luminous, sophisticated depth */}
+              {/* Elegant floating circular markers - ultra premium with luminous depth */}
               {BUILDINGS.map((b: any) => {
                 const p = BASE_POS[b.id as Building];
                 const count = (listingsByBldg[b.id as Building] || []).length;
                 const isActive = focusedBldg === b.id;
-                const sx = p.x;
-                const sy = p.y;
+                const sx = p.x * 1.11;
+                const sy = p.y * 1.18;
                 return (
                   <g key={b.id} onClick={() => handleTowerClick(b.id as Building)} style={{ cursor: 'pointer' }}>
-                    {/* Outer luminous glow ring */}
-                    <circle cx={sx} cy={sy} r="55" fill="none" stroke={b.color} strokeWidth="2" opacity="0.2" filter="url(#luminous-glow)" />
-                    {/* Main floating marker - elegant circle with depth */}
-                    <circle cx={sx} cy={sy} r="36" fill={b.color} stroke="#fff" strokeWidth="3" opacity="0.95" filter="url(#luminous-glow)" />
-                    {/* Inner highlight for premium look */}
-                    <circle cx={sx} cy={sy} r="16" fill="#fff" opacity="0.12" />
+                    {/* Outer soft luminous ring */}
+                    <circle cx={sx} cy={sy} r="52" fill="none" stroke={b.color} strokeWidth="1.8" opacity="0.18" filter="url(#luminous-glow)" />
+                    {/* Main elegant floating circle */}
+                    <circle cx={sx} cy={sy} r="32" fill={b.color} stroke="#fff" strokeWidth="2.8" opacity="0.92" filter="url(#luminous-glow)" />
+                    {/* Inner refined ring for depth */}
+                    <circle cx={sx} cy={sy} r="18" fill="none" stroke="#fff" strokeWidth="1" opacity="0.22" />
+                    {/* Subtle center highlight */}
+                    <circle cx={sx} cy={sy} r="8" fill="#fff" opacity="0.08" />
                     <text 
-                      x={sx} y={sy + 5} 
-                      textAnchor="middle" fill="#fff" fontSize="13" fontWeight="700" letterSpacing="-0.3"
+                      x={sx} y={sy + 4} 
+                      textAnchor="middle" fill="#fff" fontSize="12" fontWeight="700" letterSpacing="-0.3"
                     >
                       {b.label}
                     </text>
-
                     {/* Premium count badge */}
                     {count > 0 && (
                       <g>
-                        <circle cx={sx + 48} cy={sy - 28} r="14" fill="#000000" stroke={b.color} strokeWidth="2" />
-                        <text x={sx + 48} y={sy - 23} textAnchor="middle" fill="#e2e8f0" fontSize="11" fontWeight="600">{count}</text>
+                        <circle cx={sx + 46} cy={sy - 30} r="13" fill="#000000" stroke={b.color} strokeWidth="1.8" />
+                        <text x={sx + 46} y={sy - 25} textAnchor="middle" fill="#f1f5f9" fontSize="10" fontWeight="600">{count}</text>
                       </g>
                     )}
                   </g>
                 );
               })}
 
-              {/* Subtle elegant details for cinematic depth */}
-              <circle cx="120" cy="420" r="2" fill="#333" />
-              <circle cx="780" cy="100" r="2.5" fill="#333" />
+              {/* Subtle elegant street details for depth */}
+              <line x1="160" y1="110" x2="155" y2="450" stroke="#1a1a1a" strokeWidth="4" />
+              <line x1="620" y1="105" x2="625" y2="455" stroke="#1a1a1a" strokeWidth="4" />
+              <circle cx="210" cy="510" r="2" fill="#222" />
+              <circle cx="790" cy="85" r="2.5" fill="#222" />
             </svg>
 
-                {/* Listing dots - real data */}
+                {/* Listing dots - real data, premium treatment */}
                 {mapListings.map((l, idx) => {
                   const pos = getListingPos(l, idx);
                   const isActive = !focusedBldg || focusedBldg === l.building;
                   const isPanel = panelFocus?.id === l.id;
                   const col = scoreColor(l.compositeScore);
+                  const isHigh = l.compositeScore >= 85;
                   return (
                     <g 
                       key={l.id}
@@ -1626,32 +1631,45 @@ function MapView({ listings, onSelect, formatPrice, t }: {
                       opacity={isActive ? 1 : 0.3}
                       style={{ cursor: 'pointer' }}
                     >
+                      {/* Extra luminous ring for high-opportunity listings */}
+                      {isHigh && (
+                        <circle 
+                          cx={pos.x} 
+                          cy={pos.y} 
+                          r={isPanel ? 8 : 6.5} 
+                          fill="none" 
+                          stroke={col} 
+                          strokeWidth="1.5" 
+                          opacity="0.35"
+                          filter="url(#luminous-glow)"
+                        />
+                      )}
                       <circle 
                         cx={pos.x} 
                         cy={pos.y} 
-                        r={isPanel ? 5.5 : 4} 
+                        r={isPanel ? (isHigh ? 6 : 5.5) : (isHigh ? 4.5 : 4)} 
                         fill={col} 
                         stroke="#f8fafc" 
-                        strokeWidth={isPanel ? 1.6 : 1} 
+                        strokeWidth={isPanel ? 1.8 : 1} 
                         className="map-dot"
                       />
                       {isPanel && (
-                        <text x={pos.x} y={pos.y - 8} textAnchor="middle" fill="#f1f5f9" fontSize="8" fontWeight="600">{l.id}</text>
+                        <text x={pos.x} y={pos.y - 10} textAnchor="middle" fill="#f1f5f9" fontSize="9" fontWeight="600">{l.id}</text>
                       )}
                     </g>
                   );
                 })}
               </g>
 
-              {/* Fixed legend bar (outside the pan/zoom group so it stays readable) */}
-              <g transform="translate(30, 310)">
+              {/* Fixed elegant legend (outside transform for readability) */}
+              <g transform="translate(60, 560)">
                 {BUILDINGS.map((b: any, i: number) => {
                   const c = (listingsByBldg[b.id as Building] || []).length;
                   const active = focusedBldg === b.id;
                   return (
-                    <g key={i} transform={`translate(${i * 190}, 0)`} onClick={() => handleTowerClick(b.id as Building)} style={{ cursor: 'pointer' }}>
-                      <circle cx="9" cy="7" r="6.5" fill={b.color} />
-                      <text x="21" y="11" fill={active ? '#f1f5f9' : '#94a3b8'} fontSize="11" fontWeight="600">{b.label} <tspan fill="#64748b">({c})</tspan></text>
+                    <g key={i} transform={`translate(${i * 300}, 0)`} onClick={() => handleTowerClick(b.id as Building)} style={{ cursor: 'pointer' }}>
+                      <circle cx="8" cy="6" r="7" fill={b.color} />
+                      <text x="22" y="10" fill={active ? '#f1f5f9' : '#94a3b8'} fontSize="12" fontWeight="600">{b.label} <tspan fill="#555">({c})</tspan></text>
                     </g>
                   );
                 })}
