@@ -669,7 +669,7 @@ function OverviewView({ listings, allListings, filter, onFilter, onSelect, sortB
 
       {/* Building cards */}
       <div className="buildings-strip" role="region" aria-label="Edificios">
-        {currentBuildings.map((b: any) => {
+        {BUILDINGS.map((b: any) => {
           const bl = allListings.filter(l => l.building === b.id);
           const bestB = bl.slice().sort((a, c) => c.compositeScore - a.compositeScore)[0];
           return (
