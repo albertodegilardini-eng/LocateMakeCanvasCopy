@@ -2895,13 +2895,19 @@ button:not([disabled]) {
   position: relative;
   border-radius: 10px;
   overflow: hidden;
-  border: 1px solid #1f2a3a;
-  background: #080d14;
+  border: 1px solid var(--color-border);
+  background: #0b111a;
   cursor: grab;
+  box-shadow: inset 0 1px 3px rgba(0,0,0,0.3);
 }
 
 .map-svg-wrap:active {
   cursor: grabbing;
+}
+
+/* Additional UI polish for professional map experience */
+.map-svg-wrap svg {
+  filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.2));
 }
 
 .map-svg-wrap svg {

@@ -1535,25 +1535,31 @@ function MapView({ listings, onSelect, formatPrice, t }: {
             >
               {/* Pan + Zoom transform group for the entire map content */}
               <g transform={`translate(${pan.x} ${pan.y}) scale(${zoom})`}>
-                {/* Subtle map base */}
-                <rect x="20" y="22" width="760" height="280" rx="12" fill="#0a1018" stroke="#1a2533" strokeWidth="2" />
+                {/* Modern map base with subtle gradient effect via layers */}
+                <rect x="20" y="22" width="760" height="280" rx="12" fill="#0f172a" stroke="#1e2937" strokeWidth="2" />
+                <rect x="25" y="27" width="750" height="270" rx="10" fill="#111b24" opacity="0.6" />
 
-                {/* Parque La Mexicana - polished */}
+                {/* Enhanced Parque La Mexicana - more professional with tree hints */}
                 <ellipse cx="400" cy="172" rx="115" ry="66" fill="#0f2a24" />
                 <ellipse cx="400" cy="172" rx="72" ry="38" fill="#13382f" opacity="0.7" />
-                <text x="400" y="175" textAnchor="middle" fill="#4ade80" fontSize="9.5" fontWeight="700" letterSpacing="0.5">PARQUE LA MEXICANA</text>
+                {/* Subtle tree dots for visual interest */}
+                <circle cx="360" cy="150" r="4" fill="#166534" opacity="0.6" />
+                <circle cx="380" cy="140" r="3" fill="#166534" opacity="0.5" />
+                <circle cx="420" cy="155" r="5" fill="#166534" opacity="0.6" />
+                <circle cx="440" cy="145" r="3.5" fill="#166534" opacity="0.5" />
+                <text x="400" y="175" textAnchor="middle" fill="#4ade80" fontSize="10" fontWeight="700" letterSpacing="0.5">PARQUE LA MEXICANA</text>
 
-                {/* Av Santa Fe - nicer road */}
-                <line x1="48" y1="162" x2="755" y2="160" stroke="#222f40" strokeWidth="26" strokeLinecap="round" />
-                <line x1="48" y1="162" x2="755" y2="160" stroke="#37455a" strokeWidth="11" strokeLinecap="round" />
-                <line x1="48" y1="162" x2="755" y2="160" stroke="#4b5a70" strokeWidth="3" strokeDasharray="2 6" />
-                <text x="400" y="130" textAnchor="middle" fill="#64748b" fontSize="9" fontWeight="600">AV. SANTA FE</text>
+                {/* Improved Av Santa Fe - modern road with markings */}
+                <line x1="48" y1="162" x2="755" y2="160" stroke="#1e2937" strokeWidth="28" strokeLinecap="round" />
+                <line x1="48" y1="162" x2="755" y2="160" stroke="#334155" strokeWidth="12" strokeLinecap="round" />
+                <line x1="48" y1="162" x2="755" y2="160" stroke="#475569" strokeWidth="2" strokeDasharray="8 12" />
+                <text x="400" y="130" textAnchor="middle" fill="#94a3b8" fontSize="10" fontWeight="600">AV. SANTA FE</text>
 
-                {/* Subtle cross access */}
-                <line x1="185" y1="55" x2="180" y2="265" stroke="#1d2838" strokeWidth="4.5" />
-                <line x1="560" y1="52" x2="565" y2="268" stroke="#1d2838" strokeWidth="4.5" />
+                {/* Better cross streets */}
+                <line x1="185" y1="55" x2="180" y2="265" stroke="#1e2937" strokeWidth="5" />
+                <line x1="560" y1="52" x2="565" y2="268" stroke="#1e2937" strokeWidth="5" />
 
-                {/* Towers */}
+                {/* Professional tower markers - building-like shapes */}
                 {BUILDINGS.map((b: any) => {
                   const p = BASE_POS[b.id as Building];
                   const count = (listingsByBldg[b.id as Building] || []).length;
@@ -1566,17 +1572,17 @@ function MapView({ listings, onSelect, formatPrice, t }: {
                       {/* Soft halo / zone */}
                       <circle cx={sx} cy={sy} r={52} fill={b.color} opacity={isActive ? 0.16 : 0.07} />
 
-                      {/* Attractive tower marker */}
-                      <circle cx={sx} cy={sy} r={r + 5} fill="none" stroke={b.color} strokeWidth="1.5" opacity="0.35" />
-                      <circle 
-                        cx={sx} cy={sy} r={r} 
-                        fill={b.color} 
-                        stroke="#fff" strokeWidth="2.5" 
-                        className="map-tower-circle"
-                      />
+                      {/* Building representation: base + tower */}
+                      <rect x={sx - 8} y={sy - 22} width="16" height="28" rx="2" fill={b.color} stroke="#fff" strokeWidth="1.5" opacity="0.9" />
+                      {/* Window details for professional look */}
+                      <rect x={sx - 5} y={sy - 18} width="3" height="3" fill="#fff" opacity="0.6" />
+                      <rect x={sx + 2} y={sy - 18} width="3" height="3" fill="#fff" opacity="0.6" />
+                      <rect x={sx - 5} y={sy - 12} width="3" height="3" fill="#fff" opacity="0.6" />
+                      <rect x={sx + 2} y={sy - 12} width="3" height="3" fill="#fff" opacity="0.6" />
+
                       <text 
                         x={sx} y={sy + 4.5} 
-                        textAnchor="middle" fill="#fff" fontSize="10" fontWeight="800" letterSpacing="-0.3"
+                        textAnchor="middle" fill="#fff" fontSize="9" fontWeight="800" letterSpacing="-0.3"
                       >
                         {b.label.split(' ')[0]}
                       </text>
