@@ -1129,88 +1129,542 @@ function TrackingView({ t }: { t: (es: string, en: string) => string }) {
 
 // ─── MapView ──────────────────────────────────────────────────────────────────
 
-function MapView() {
-  const [selected, setSelected] = useState<string | null>(null);
+function MapView({ listings, onSelect, formatPrice, t }: { 
+  listings: Listing[]; 
+  onSelect: (l: Listing) => void; 
+  formatPrice: (n: number) => string; 
+  t: (es: string, en: string) => string;
+}) {
+  const [zoom, setZoom] = useState(1.0);
+  const [pan, setPan] = useState({ x: 0, y: 0 });
+  const [focusedBldg, setFocusedBldg] = useState<Building | null>(null);
+  const [mapFilter, setMapFilter] = useState<'all' | 'high' | 'negotiable' | 'shortdom' | 'tworec' | 'threerec'>('all');
+  const [panelFocus, setPanelFocus] = useState<{ type: 'building' | 'listing'; id: string } | null>(null);
+  const [isDragging, setIsDragging] = useState(false);
+  const [dragStart, setDragStart] = useState({ x: 0, y: 0 });
 
-  const locations = [
-    { id: "peninsula", name: "Península", lat: 19.36, lng: -99.27, color: "#1d4ed8", desc: "Av. Santa Fe · Torre icónica" },
-    { id: "torre300", name: "Torre 300", lat: 19.362, lng: -99.265, color: "#d97706", desc: "Av. Santa Fe · Vista La Mexicana" },
-    { id: "paradox", name: "Paradox", lat: 19.365, lng: -99.262, color: "#7c3aed", desc: "Av. Santa Fe 546 · Exclusivo" },
-  ];
+  // Base positions for Santa Fe towers (relative layout)
+  const BASE_POS: Record<Building, { x: number; y: number }> = {
+    peninsula: { x: 210, y: 138 },
+    torre300: { x: 400, y: 172 },
+    paradox: { x: 590, y: 140 },
+  };
+
+  // Real filtered listings for the map dots
+  const mapListings = useMemo(() => {
+    let ls = [...listings];
+    if (focusedBldg) ls = ls.filter(l => l.building === focusedBldg);
+    if (mapFilter === 'high') ls = ls.filter(l => l.compositeScore >= 82);
+    if (mapFilter === 'negotiable') ls = ls.filter(l => l.negotiable);
+    if (mapFilter === 'shortdom') ls = ls.filter(l => l.dom <= 32);
+    if (mapFilter === 'tworec') ls = ls.filter(l => l.bedrooms === 2);
+    if (mapFilter === 'threerec') ls = ls.filter(l => l.bedrooms >= 3);
+    return ls;
+  }, [listings, focusedBldg, mapFilter]);
+
+  // Group for rendering
+  const listingsByBldg = useMemo(() => {
+    const m: Record<Building, Listing[]> = { peninsula: [], torre300: [], paradox: [] };
+    mapListings.forEach(l => { m[l.building].push(l); });
+    return m;
+  }, [mapListings]);
+
+  // Rich stats per building computed from REAL current listings prop
+  const buildingStats = useMemo(() => {
+    return BUILDINGS.map((b: any) => {
+      const bl = listings.filter((l: Listing) => l.building === b.id);
+      if (!bl.length) return { ...b, count: 0, minPrice: 0, maxPrice: 0, avgDom: 0, avgScore: 0, negPct: 0, top: [] as Listing[] };
+      const prices = bl.map(l => l.price).sort((a, b) => a - b);
+      const doms = bl.map(l => l.dom);
+      const scores = bl.map(l => l.compositeScore);
+      const negCount = bl.filter(l => l.negotiable).length;
+      const top = [...bl].sort((a, c) => c.compositeScore - a.compositeScore).slice(0, 3);
+      return {
+        ...b,
+        count: bl.length,
+        minPrice: prices[0],
+        maxPrice: prices[prices.length - 1],
+        avgDom: Math.round(doms.reduce((s, v) => s + v, 0) / doms.length),
+        avgScore: Math.round(scores.reduce((s, v) => s + v, 0) / scores.length),
+        negPct: Math.round((negCount / bl.length) * 100),
+        top,
+      };
+    });
+  }, [listings]);
+
+  const activeStats = focusedBldg ? buildingStats.find((s: any) => s.id === focusedBldg) : null;
+
+  // Current panel content (rich info)
+  const panelData = useMemo(() => {
+    if (!panelFocus) return null;
+    if (panelFocus.type === 'building') {
+      return buildingStats.find((s: any) => s.id === panelFocus.id);
+    }
+    return listings.find(l => l.id === panelFocus.id);
+  }, [panelFocus, buildingStats, listings]);
+
+  // Helper: extract useful amenity keywords from real listing notes + data
+  function getAmenityTags(l: Listing): string[] {
+    const text = ((l.notes || '') + ' ' + l.buildingLabel).toLowerCase();
+    const tags: string[] = [];
+    if (l.floor >= 30 || text.includes('alto') || text.includes('vista')) tags.push('Alta vista');
+    if (text.includes('parque') || text.includes('mexicana')) tags.push('Vista parque');
+    if (text.includes('amueblado')) tags.push('Amueblado');
+    if (text.includes('lujo') || text.includes('premium') || text.includes('amenidades')) tags.push('Premium');
+    if (l.sqm >= 160) tags.push('Espacioso');
+    if (l.bedrooms >= 3) tags.push('Familiar');
+    return tags.length ? tags.slice(0, 2) : ['Bien ubicado'];
+  }
+
+  // Transformed positions – pan + zoom handled via SVG group transform
+  function getListingPos(l: Listing, localIndex: number) {
+    const base = BASE_POS[l.building];
+    const n = Math.max(1, (listingsByBldg[l.building] || []).length);
+    const angle = ((localIndex % n) / n) * (Math.PI * 2) + 0.9;
+    const r = 14 + (localIndex % 3) * 3.5;
+    return {
+      x: base.x + Math.cos(angle) * r,
+      y: base.y + Math.sin(angle) * r * 0.52,
+    };
+  }
+
+  // Drag handlers for pan
+  const handleMouseDown = (e: React.MouseEvent<SVGSVGElement>) => {
+    setIsDragging(true);
+    setDragStart({ x: e.clientX - pan.x, y: e.clientY - pan.y });
+  };
+
+  const handleMouseMove = (e: React.MouseEvent<SVGSVGElement>) => {
+    if (!isDragging) return;
+    setPan({
+      x: e.clientX - dragStart.x,
+      y: e.clientY - dragStart.y,
+    });
+  };
+
+  const handleMouseUp = () => {
+    setIsDragging(false);
+  };
+
+  const handleWheel = (e: React.WheelEvent<SVGSVGElement>) => {
+    e.preventDefault();
+    const delta = e.deltaY > 0 ? -0.1 : 0.1;
+    const newZoom = Math.max(0.72, Math.min(1.85, +(zoom + delta).toFixed(2)));
+    setZoom(newZoom);
+  };
+
+  const handleTowerClick = (id: Building) => {
+    const next = focusedBldg === id ? null : id;
+
+    if (next) {
+      // Auto center + zoom on the tower for better UX
+      const pos = BASE_POS[id];
+      const targetZoom = Math.max(zoom, 1.35);
+      const cx = 400; // approx center of viewBox
+      const cy = 177;
+      const newPanX = cx - pos.x * targetZoom;
+      const newPanY = cy - pos.y * targetZoom;
+      setZoom(targetZoom);
+      setPan({ x: newPanX, y: newPanY });
+    }
+
+    setFocusedBldg(next);
+    setPanelFocus(next ? { type: 'building', id: next } : null);
+  };
+
+  const handleDotHover = (l: Listing | null) => {
+    if (l) {
+      setPanelFocus({ type: 'listing', id: l.id });
+    } else if (panelFocus?.type === 'listing') {
+      setPanelFocus(null);
+    }
+  };
+
+  const handleDotClick = (l: Listing) => {
+    setFocusedBldg(l.building);
+    setPanelFocus({ type: 'listing', id: l.id });
+    onSelect(l); // open rich detail drawer
+  };
+
+  const resetView = () => {
+    setZoom(1.0);
+    setPan({ x: 0, y: 0 });
+    setFocusedBldg(null);
+    setMapFilter('all');
+    setPanelFocus(null);
+  };
+
+  const changeZoom = (delta: number) => {
+    setZoom(z => Math.max(0.72, Math.min(1.85, +(z + delta).toFixed(2))));
+  };
+
+  const toggleFilter = (f: typeof mapFilter) => {
+    setMapFilter(mapFilter === f ? 'all' : f);
+  };
+
+  // Export current visible listings as CSV
+  const exportVisible = () => {
+    if (!mapListings.length) return;
+    const header = 'ID,Edificio,Piso,Precio MXN,Score,DOM,Negociable,Agente,URL\n';
+    const rows = mapListings.map(l => {
+      const safe = (s: string) => `"${(s || '').replace(/"/g, '""')}"`;
+      return [
+        l.id,
+        l.buildingLabel,
+        l.floor,
+        l.price,
+        l.compositeScore,
+        l.dom,
+        l.negotiable ? 'Sí' : 'No',
+        safe(l.agentName),
+        l.url || ''
+      ].join(',');
+    }).join('\n');
+    navigator.clipboard?.writeText(header + rows);
+    // Small non-blocking feedback (user can see in console or UI later)
+    console.log('%c[Map] Exported ' + mapListings.length + ' listings to clipboard', 'color:#64748b');
+  };
+
+  const currentFilterLabel = {
+    all: 'Todos',
+    high: 'Alto score (82+)',
+    negotiable: 'Negociables',
+    shortdom: 'DOM corto ≤32d',
+    tworec: '2 recámaras',
+    threerec: '3+ recámaras',
+  }[mapFilter];
+
+  // Rich panel content renderer
+  const renderInfoPanel = () => {
+    if (!panelData && !focusedBldg) {
+      return (
+        <div style={{ color: 'var(--color-text-faint)', fontSize: 11, padding: '12px 4px' }}>
+          Hover o haz clic en una torre o punto para ver inteligencia de mercado.
+          <div style={{ marginTop: 10, fontSize: 10, opacity: 0.7 }}>
+            Usa zoom, filtros y las torres para explorar.
+          </div>
+        </div>
+      );
+    }
+
+    if (panelFocus?.type === 'building' || (!panelFocus && focusedBldg)) {
+      const stats: any = activeStats || buildingStats.find((s: any) => s.id === focusedBldg);
+      if (!stats) return null;
+      return (
+        <>
+          <div className="map-info-header">
+            <span className="color-dot" style={{ background: stats.color }} />
+            <span className="map-info-title">{stats.label}</span>
+            <span style={{ marginLeft: 'auto', fontSize: 10, color: 'var(--color-text-faint)' }}>{stats.count} listings</span>
+          </div>
+
+          <div className="map-info-kpis">
+            <div className="map-info-kpi">
+              <div className="map-info-kpi-label">Rango precio</div>
+              <div className="map-info-kpi-value">{formatPrice(stats.minPrice)} — {formatPrice(stats.maxPrice)}</div>
+            </div>
+            <div className="map-info-kpi">
+              <div className="map-info-kpi-label">DOM promedio</div>
+              <div className="map-info-kpi-value">{stats.avgDom}d</div>
+            </div>
+            <div className="map-info-kpi">
+              <div className="map-info-kpi-label">Score promedio</div>
+              <div className="map-info-kpi-value" style={{ color: scoreColor(stats.avgScore) }}>{stats.avgScore}</div>
+            </div>
+            <div className="map-info-kpi">
+              <div className="map-info-kpi-label">Negociables</div>
+              <div className="map-info-kpi-value">{stats.negPct}%</div>
+            </div>
+          </div>
+
+          <div style={{ fontSize: 10, color: 'var(--color-text-muted)', marginTop: 2 }}>{stats.tagline}</div>
+
+          {/* Quick amenity insights from real listings in this tower */}
+          <div style={{ fontSize: 9, color: 'var(--color-text-faint)' }}>
+            {stats.count > 0 ? 'Amenidades destacadas en torre: ' + (listings.filter((l: Listing) => l.building === stats.id).flatMap(getAmenityTags).slice(0,3).join(' · ') || 'Datos de ubicación') : ''}
+          </div>
+
+          {stats.top?.length > 0 && (
+            <div className="map-top-listings">
+              <div style={{ fontSize: 9, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.06em', color: 'var(--color-text-faint)', marginBottom: 3 }}>Top oportunidades</div>
+              {stats.top.map((l: Listing) => (
+                <div key={l.id} className="map-top-item" onClick={() => handleDotClick(l)}>
+                  <span>{l.id} · P{l.floor} · {l.bedrooms}r</span>
+                  <span style={{ color: scoreColor(l.compositeScore), fontWeight: 700 }}>{l.compositeScore}</span>
+                </div>
+              ))}
+            </div>
+          )}
+        </>
+      );
+    }
+
+    // Listing focused
+    const l = panelData as Listing;
+    if (!l) return null;
+    const psm = Math.round(l.price / l.sqm);
+    return (
+      <>
+        <div className="map-info-header">
+          <span className="color-dot" style={{ background: BLDG_COLOR[l.building] }} />
+          <span className="map-info-title">{l.id} · Piso {l.floor}</span>
+        </div>
+        <div style={{ fontSize: 13, fontWeight: 700, margin: '2px 0' }}>{formatPrice(l.price)} <span style={{ fontSize: 11, opacity: 0.65 }}>/mes</span></div>
+        <div style={{ fontSize: 11, color: 'var(--color-text-muted)' }}>
+          {l.bedrooms} rec · {l.bathrooms} ba · {l.sqm} m² · {psm} $/m²
+        </div>
+
+        <div className="map-info-kpis" style={{ marginTop: 4 }}>
+          <div className="map-info-kpi">
+            <div className="map-info-kpi-label">Score / Leverage</div>
+            <div className="map-info-kpi-value" style={{ color: scoreColor(l.compositeScore) }}>{l.compositeScore} / {l.leverageScore}</div>
+          </div>
+          <div className="map-info-kpi">
+            <div className="map-info-kpi-label">DOM · Confianza</div>
+            <div className="map-info-kpi-value">{l.dom}d · {l.confidence}</div>
+          </div>
+        </div>
+
+        <div style={{ fontSize: 10.5, marginTop: 2 }}>
+          {l.agentName} · {l.agentFirm}
+        </div>
+
+        {/* Amenities pulled from actual listing notes + data */}
+        <div style={{ display: 'flex', gap: 4, flexWrap: 'wrap', marginTop: 4 }}>
+          {getAmenityTags(l).map(tag => (
+            <span key={tag} style={{ fontSize: 9, background: 'var(--color-primary-dim)', color: 'var(--color-text)', padding: '1px 6px', borderRadius: 3 }}>{tag}</span>
+          ))}
+        </div>
+
+        <button
+          onClick={() => onSelect(l)}
+          style={{
+            marginTop: 6,
+            fontSize: 11,
+            padding: '5px 10px',
+            background: 'var(--color-primary)',
+            color: 'var(--color-text-inverse)',
+            border: 'none',
+            borderRadius: 6,
+            cursor: 'pointer',
+            fontWeight: 600,
+          }}
+        >
+          Abrir ficha completa →
+        </button>
+        {l.url && (
+          <a href={l.url} target="_blank" rel="noopener noreferrer" style={{ fontSize: 10, color: 'var(--color-primary)' }}>
+            Ver en Inmuebles24 ↗
+          </a>
+        )}
+      </>
+    );
+  };
 
   return (
     <div>
       <div className="view-header">
-        <div className="view-title-block"><h1>Mapa — Santa Fe CDMX</h1><p className="subtitle">Distribución geográfica de listados por torre (datos aproximados)</p></div>
+        <div className="view-title-block">
+          <h1>Mapa — Santa Fe CDMX</h1>
+          <p className="subtitle">Inteligencia de ubicación · {mapListings.length} listados activos · Datos Inmuebles24 (2-3 rec)</p>
+        </div>
       </div>
 
-      <div className="map-enhanced" style={{
-        background: 'linear-gradient(135deg, #0f1620 0%, #1a2434 100%)',
-        borderRadius: '16px',
-        padding: '24px',
-        position: 'relative',
-        overflow: 'hidden',
-        minHeight: 420,
-        border: '1px solid var(--color-border)'
-      }}>
-        {/* Stylized map background */}
-        <svg width="100%" height="340" viewBox="0 0 800 340" style={{ opacity: 0.9 }}>
-          {/* Simplified Santa Fe area roads / park */}
-          <rect x="40" y="40" width="720" height="260" rx="12" fill="#111b24" stroke="#22303f" strokeWidth="2"/>
-          
-          {/* Parque La Mexicana approx */}
-          <ellipse cx="420" cy="170" rx="120" ry="70" fill="#0e2a1f" opacity="0.7"/>
-          <text x="420" y="175" textAnchor="middle" fill="#22c55e" fontSize="11" fontWeight="600">PARQUE LA MEXICANA</text>
+      <div className="map-container">
+        {/* Controls */}
+        <div className="map-header-controls">
+          <div className="map-zoom-controls">
+            <button className="map-zoom-btn" onClick={() => changeZoom(-0.12)} title="Alejar">−</button>
+            <button className="map-zoom-btn" onClick={() => changeZoom(0.12)} title="Acercar">+</button>
+          </div>
+          <span className="map-zoom-label">{Math.round(zoom * 100)}%</span>
 
-          {/* Main avenue */}
-          <line x1="80" y1="160" x2="720" y2="155" stroke="#334155" strokeWidth="18" strokeLinecap="round"/>
-          <text x="400" y="130" textAnchor="middle" fill="#64748b" fontSize="10">AV. SANTA FE</text>
+          <button onClick={resetView} style={{ fontSize: 11, padding: '4px 10px', borderRadius: 6, border: '1px solid var(--color-border)', background: 'var(--color-surface)', cursor: 'pointer' }}>
+            Reset vista
+          </button>
 
-          {/* Building markers */}
-          {locations.map((loc, i) => {
-            const x = 160 + i * 240;
-            const y = 120 + (i % 2) * 40;
-            const isSel = selected === loc.id;
-            return (
-              <g key={loc.id} onClick={() => setSelected(isSel ? null : loc.id)} style={{ cursor: 'pointer' }}>
-                <circle cx={x} cy={y} r={isSel ? 18 : 14} fill={loc.color} opacity={isSel ? 0.95 : 0.85} stroke="#fff" strokeWidth="3"/>
-                <text x={x} y={y + 4} textAnchor="middle" fill="#fff" fontSize="9" fontWeight="700">{loc.name.split(' ')[0]}</text>
-                {isSel && <text x={x} y={y + 30} textAnchor="middle" fill="var(--color-text)" fontSize="11">{loc.desc}</text>}
-              </g>
-            );
-          })}
+          <button 
+            onClick={exportVisible} 
+            title="Copiar listados visibles como CSV"
+            style={{ fontSize: 11, padding: '4px 10px', borderRadius: 6, border: '1px solid var(--color-border)', background: 'var(--color-surface)', cursor: 'pointer' }}
+          >
+            Exportar CSV
+          </button>
 
-          {/* Legend */}
-          <g transform="translate(40, 300)">
-            {BUILDINGS.map((b: any, idx: number) => (
-              <g key={idx}>
-                <circle cx={idx * 180 + 20} cy="8" r="6" fill={b.color} />
-                <text x={idx * 180 + 34} y="12" fill="var(--color-text-muted)" fontSize="11">{b.label}</text>
-              </g>
+          <div className="map-filter-row" style={{ padding: 0, marginLeft: 8 }}>
+            {[
+              { id: 'all', label: 'Todos' },
+              { id: 'high', label: 'Alto score' },
+              { id: 'negotiable', label: 'Negociables' },
+              { id: 'shortdom', label: 'DOM corto' },
+              { id: 'tworec', label: '2 rec' },
+              { id: 'threerec', label: '3 rec' },
+            ].map(f => (
+              <button
+                key={f.id}
+                className={"filter-chip" + (mapFilter === f.id ? " active" : "")}
+                onClick={() => toggleFilter(f.id as any)}
+              >
+                {f.label}
+              </button>
             ))}
-          </g>
-        </svg>
+          </div>
 
-        <div style={{ position: 'absolute', bottom: 16, right: 24, fontSize: 11, color: 'var(--color-text-faint)' }}>
-          Ubicaciones aproximadas · Haz clic en los marcadores
+          <span style={{ marginLeft: 'auto', fontSize: 11, color: 'var(--color-text-faint)' }}>
+            Filtro activo: {currentFilterLabel} · Zoom para más detalle
+          </span>
         </div>
 
-        {/* Quick info cards */}
-        <div style={{ display: 'flex', gap: 12, marginTop: 12, flexWrap: 'wrap' }}>
-          {BUILDINGS.map((b: any) => {
-            const listingCount = FALLBACK_LISTINGS.filter((l: any) => l.building === b.id && (l.bedrooms === 2 || l.bedrooms === 3)).length;
-            return (
-              <div key={b.id} style={{ background: 'var(--color-surface)', padding: '10px 14px', borderRadius: 10, border: '1px solid var(--color-border)', minWidth: 180 }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                  <span style={{ width: 10, height: 10, borderRadius: '50%', background: b.color }} />
-                  <strong>{b.label}</strong>
-                </div>
-                <div style={{ fontSize: 12, color: 'var(--color-text-muted)', marginTop: 2 }}>
-                  {listingCount} listados 2-3 rec · {b.tagline}
-                </div>
-              </div>
-            );
-          })}
+        <div className="map-main">
+          {/* SVG Map */}
+          <div className="map-svg-wrap">
+            {/* RED MARKER ADDED TO PROVE MAP WAS UPDATED */}
+            <div style={{position:'absolute',top:'8px',left:'8px',zIndex:1000,background:'red',color:'white',padding:'4px 10px',fontSize:'11px',fontWeight:'bold',borderRadius:'4px',boxShadow:'0 2px 8px rgba(0,0,0,0.6)',pointerEvents:'none'}}>
+              MAP UPDATED - RED MARKER PROOF
+            </div>
+            <svg 
+              width="100%" 
+              height="355" 
+              viewBox="0 0 800 355" 
+              style={{ display: 'block' }}
+              onMouseDown={handleMouseDown}
+              onMouseMove={handleMouseMove}
+              onMouseUp={handleMouseUp}
+              onMouseLeave={handleMouseUp}
+              onWheel={handleWheel}
+            >
+              {/* Pan + Zoom transform group for the entire map content */}
+              <g transform={`translate(${pan.x} ${pan.y}) scale(${zoom})`}>
+                {/* Subtle map base */}
+                <rect x="20" y="22" width="760" height="280" rx="12" fill="#0a1018" stroke="#1a2533" strokeWidth="2" />
+
+                {/* Parque La Mexicana - polished */}
+                <ellipse cx="400" cy="172" rx="115" ry="66" fill="#0f2a24" />
+                <ellipse cx="400" cy="172" rx="72" ry="38" fill="#13382f" opacity="0.7" />
+                <text x="400" y="175" textAnchor="middle" fill="#4ade80" fontSize="9.5" fontWeight="700" letterSpacing="0.5">PARQUE LA MEXICANA</text>
+
+                {/* Av Santa Fe - nicer road */}
+                <line x1="48" y1="162" x2="755" y2="160" stroke="#222f40" strokeWidth="26" strokeLinecap="round" />
+                <line x1="48" y1="162" x2="755" y2="160" stroke="#37455a" strokeWidth="11" strokeLinecap="round" />
+                <line x1="48" y1="162" x2="755" y2="160" stroke="#4b5a70" strokeWidth="3" strokeDasharray="2 6" />
+                <text x="400" y="130" textAnchor="middle" fill="#64748b" fontSize="9" fontWeight="600">AV. SANTA FE</text>
+
+                {/* Subtle cross access */}
+                <line x1="185" y1="55" x2="180" y2="265" stroke="#1d2838" strokeWidth="4.5" />
+                <line x1="560" y1="52" x2="565" y2="268" stroke="#1d2838" strokeWidth="4.5" />
+
+                {/* Towers */}
+                {BUILDINGS.map((b: any) => {
+                  const p = BASE_POS[b.id as Building];
+                  const count = (listingsByBldg[b.id as Building] || []).length;
+                  const isActive = focusedBldg === b.id;
+                  const sx = p.x;
+                  const sy = p.y;
+                  const r = isActive ? 17 : 15;
+                  return (
+                    <g key={b.id} onClick={() => handleTowerClick(b.id as Building)} style={{ cursor: 'pointer' }}>
+                      {/* Soft halo / zone */}
+                      <circle cx={sx} cy={sy} r={52} fill={b.color} opacity={isActive ? 0.16 : 0.07} />
+
+                      {/* Attractive tower marker */}
+                      <circle cx={sx} cy={sy} r={r + 5} fill="none" stroke={b.color} strokeWidth="1.5" opacity="0.35" />
+                      <circle 
+                        cx={sx} cy={sy} r={r} 
+                        fill={b.color} 
+                        stroke="#fff" strokeWidth="2.5" 
+                        className="map-tower-circle"
+                      />
+                      <text 
+                        x={sx} y={sy + 4.5} 
+                        textAnchor="middle" fill="#fff" fontSize="10" fontWeight="800" letterSpacing="-0.3"
+                      >
+                        {b.label.split(' ')[0]}
+                      </text>
+
+                      {/* Count badge */}
+                      {count > 0 && (
+                        <g>
+                          <rect x={sx + 22} y={sy - 24} width="24" height="15" rx="7" fill="#0f172a" stroke={b.color} strokeWidth="1" />
+                          <text x={sx + 34} y={sy - 14} textAnchor="middle" fill="#e2e8f0" fontSize="9.5" fontWeight="700">{count}</text>
+                        </g>
+                      )}
+                    </g>
+                  );
+                })}
+
+                {/* Listing dots - real data */}
+                {mapListings.map((l, idx) => {
+                  const pos = getListingPos(l, idx);
+                  const isActive = !focusedBldg || focusedBldg === l.building;
+                  const isPanel = panelFocus?.id === l.id;
+                  const col = scoreColor(l.compositeScore);
+                  return (
+                    <g 
+                      key={l.id}
+                      onClick={() => handleDotClick(l)}
+                      onMouseEnter={() => handleDotHover(l)}
+                      onMouseLeave={() => handleDotHover(null)}
+                      opacity={isActive ? 1 : 0.3}
+                      style={{ cursor: 'pointer' }}
+                    >
+                      <circle 
+                        cx={pos.x} 
+                        cy={pos.y} 
+                        r={isPanel ? 5.5 : 4} 
+                        fill={col} 
+                        stroke="#f8fafc" 
+                        strokeWidth={isPanel ? 1.6 : 1} 
+                        className="map-dot"
+                      />
+                      {isPanel && (
+                        <text x={pos.x} y={pos.y - 8} textAnchor="middle" fill="#f1f5f9" fontSize="8" fontWeight="600">{l.id}</text>
+                      )}
+                    </g>
+                  );
+                })}
+              </g>
+
+              {/* Fixed legend bar (outside the pan/zoom group so it stays readable) */}
+              <g transform="translate(30, 310)">
+                {BUILDINGS.map((b: any, i: number) => {
+                  const c = (listingsByBldg[b.id as Building] || []).length;
+                  const active = focusedBldg === b.id;
+                  return (
+                    <g key={i} transform={`translate(${i * 190}, 0)`} onClick={() => handleTowerClick(b.id as Building)} style={{ cursor: 'pointer' }}>
+                      <circle cx="9" cy="7" r="6.5" fill={b.color} />
+                      <text x="21" y="11" fill={active ? '#f1f5f9' : '#94a3b8'} fontSize="11" fontWeight="600">{b.label} <tspan fill="#64748b">({c})</tspan></text>
+                    </g>
+                  );
+                })}
+              </g>
+            </svg>
+          </div>
+
+          {/* Rich side info panel */}
+          <div className="map-info-panel">
+            {renderInfoPanel()}
+          </div>
+        </div>
+
+        {/* Bottom strip */}
+        <div className="map-listing-strip">
+          {mapListings.slice(0, 16).map(l => (
+            <div
+              key={l.id}
+              className="map-listing-pill"
+              onClick={() => handleDotClick(l)}
+              onMouseEnter={() => handleDotHover(l)}
+              onMouseLeave={() => handleDotHover(null)}
+            >
+              <span style={{ width: 6, height: 6, borderRadius: '50%', background: scoreColor(l.compositeScore) }} />
+              <span style={{ fontFamily: 'var(--font-mono)', fontWeight: 600 }}>{l.id}</span>
+              <span style={{ color: 'var(--color-text-muted)' }}>{formatPrice(l.price)}</span>
+            </div>
+          ))}
+          {mapListings.length > 16 && (
+            <span style={{ fontSize: 10, color: 'var(--color-text-faint)', alignSelf: 'center' }}>+{mapListings.length - 16}</span>
+          )}
+          {mapListings.length === 0 && <span style={{ color: 'var(--color-text-faint)', fontSize: 11 }}>No listings match current filters</span>}
         </div>
       </div>
     </div>
@@ -1450,7 +1904,7 @@ export default function App() {
         {activeView === "agents" && <AgentsView t={t} />}
         {activeView === "dashboard" && <DashboardView listings={currentListings} currency={currency} setCurrency={setCurrency} formatPrice={formatPrice} t={t} />}
         {activeView === "tracking" && <TrackingView t={t} />}
-        {activeView === "map" && <MapView />}
+        {activeView === "map" && <MapView listings={filteredListings} onSelect={setSelectedListing} formatPrice={formatPrice} t={t} />}
       </main>
 
       <footer className="app-footer">
