@@ -396,14 +396,18 @@ function Header({ activeView, onNav, theme, onTheme, onBot, onGuide, search, onS
 function ListingCard({ l, onClick, formatPrice }: { l: Listing; onClick: () => void; formatPrice: (n: number) => string }) {
   const psm = Math.round(l.price / l.sqm);
   const bc = BLDG_COLOR[l.building];
+  const isHighOpportunity = l.compositeScore >= 85;
   return (
-    <div className="listing-card" role="button" tabIndex={0} onClick={onClick} onKeyDown={e => e.key === "Enter" && onClick()} style={{ cursor: "pointer" }}>
+    <div className={`listing-card ${isHighOpportunity ? 'luminous' : ''}`} role="button" tabIndex={0} onClick={onClick} onKeyDown={e => e.key === "Enter" && onClick()} style={{ cursor: "pointer" }}>
       <div className="listing-card-media" style={{ position: "relative" }}>
         <img className="listing-card-img" src={img(l.imgId, 400, 220)} alt={`Interior ${l.id}`} loading="lazy" decoding="async" />
         <div style={{ position: "absolute", inset: 0, background: `linear-gradient(to top, ${bc}44 0%, transparent 60%)`, zIndex: 1 }} />
         <span className="building-card-img-badge" style={{ position: "absolute", top: 10, left: 10, zIndex: 2, background: bc + "cc" }}>{l.buildingLabel}</span>
         {l.negotiable && (
           <span className="card-status" style={{ position: "absolute", top: 10, right: 10, zIndex: 2, background: "rgba(29,78,216,0.9)", color: "#fff" }}>Negociar</span>
+        )}
+        {isHighOpportunity && (
+          <span style={{ position: "absolute", top: 10, right: 70, zIndex: 2, background: 'var(--color-luminous)', color: '#000', fontSize: '9px', padding: '1px 6px', borderRadius: '3px', fontWeight: 700 }}>TOP</span>
         )}
       </div>
       <div className="card-body">
@@ -1540,29 +1544,27 @@ function MapView({ listings, onSelect, formatPrice, t }: {
             >
               {/* Pan + Zoom transform group for the entire map content */}
               <g transform={`translate(${pan.x} ${pan.y}) scale(${zoom})`}>
-                {/* Modern map base with subtle gradient effect via layers */}
-                <rect x="20" y="22" width="760" height="280" rx="12" fill="#0f172a" stroke="#1e2937" strokeWidth="2" />
-                <rect x="25" y="27" width="750" height="270" rx="10" fill="#111b24" opacity="0.6" />
+                {/* Deep void black base with cinematic depth */}
+                <rect x="20" y="22" width="760" height="280" rx="12" fill="#000000" stroke="#1a1a1a" strokeWidth="1.5" />
+                <rect x="30" y="32" width="740" height="260" rx="10" fill="#0a0a0a" opacity="0.8" />
 
-                {/* Enhanced Parque La Mexicana - more professional with tree hints */}
-                <ellipse cx="400" cy="172" rx="115" ry="66" fill="#0f2a24" />
-                <ellipse cx="400" cy="172" rx="72" ry="38" fill="#13382f" opacity="0.7" />
-                {/* Subtle tree dots for visual interest */}
-                <circle cx="360" cy="150" r="4" fill="#166534" opacity="0.6" />
-                <circle cx="380" cy="140" r="3" fill="#166534" opacity="0.5" />
-                <circle cx="420" cy="155" r="5" fill="#166534" opacity="0.6" />
-                <circle cx="440" cy="145" r="3.5" fill="#166534" opacity="0.5" />
-                <text x="400" y="175" textAnchor="middle" fill="#4ade80" fontSize="10" fontWeight="700" letterSpacing="0.5">PARQUE LA MEXICANA</text>
+                {/* Immersive Parque La Mexicana - refined with depth */}
+                <ellipse cx="400" cy="172" rx="130" ry="75" fill="#0a1f1a" />
+                <ellipse cx="400" cy="172" rx="90" ry="45" fill="#0f2a24" opacity="0.8" />
+                {/* Luminous accents for park */}
+                <circle cx="350" cy="145" r="5" fill="#22c55e" opacity="0.4" />
+                <circle cx="380" cy="160" r="3" fill="#22c55e" opacity="0.3" />
+                <circle cx="430" cy="155" r="4" fill="#22c55e" opacity="0.4" />
+                <text x="400" y="178" textAnchor="middle" fill="#4ade80" fontSize="11" fontWeight="600" letterSpacing="1">PARQUE LA MEXICANA</text>
 
-                {/* Improved Av Santa Fe - modern road with markings */}
-                <line x1="48" y1="162" x2="755" y2="160" stroke="#1e2937" strokeWidth="28" strokeLinecap="round" />
-                <line x1="48" y1="162" x2="755" y2="160" stroke="#334155" strokeWidth="12" strokeLinecap="round" />
-                <line x1="48" y1="162" x2="755" y2="160" stroke="#475569" strokeWidth="2" strokeDasharray="8 12" />
-                <text x="400" y="130" textAnchor="middle" fill="#94a3b8" fontSize="10" fontWeight="600">AV. SANTA FE</text>
+                {/* Horizontal AV. SANTA FE - elegant bar */}
+                <rect x="50" y="155" width="700" height="6" rx="3" fill="#1f1f1f" />
+                <rect x="50" y="155" width="700" height="2" rx="1" fill="#333" />
+                <text x="400" y="135" textAnchor="middle" fill="#666" fontSize="11" fontWeight="500" letterSpacing="3">AV. SANTA FE</text>
 
-                {/* Better cross streets */}
-                <line x1="185" y1="55" x2="180" y2="265" stroke="#1e2937" strokeWidth="5" />
-                <line x1="560" y1="52" x2="565" y2="268" stroke="#1e2937" strokeWidth="5" />
+                {/* Subtle refined streets */}
+                <line x1="180" y1="50" x2="175" y2="270" stroke="#1a1a1a" strokeWidth="4" />
+                <line x1="550" y1="50" x2="555" y2="270" stroke="#1a1a1a" strokeWidth="4" />
 
                 {/* Professional tower markers - building-like shapes */}
                 {BUILDINGS.map((b: any) => {
@@ -1574,29 +1576,22 @@ function MapView({ listings, onSelect, formatPrice, t }: {
                   const r = isActive ? 17 : 15;
                   return (
                     <g key={b.id} onClick={() => handleTowerClick(b.id as Building)} style={{ cursor: 'pointer' }}>
-                      {/* Soft halo / zone */}
-                      <circle cx={sx} cy={sy} r={52} fill={b.color} opacity={isActive ? 0.16 : 0.07} />
-
-                      {/* Building representation: base + tower */}
-                      <rect x={sx - 8} y={sy - 22} width="16" height="28" rx="2" fill={b.color} stroke="#fff" strokeWidth="1.5" opacity="0.9" />
-                      {/* Window details for professional look */}
-                      <rect x={sx - 5} y={sy - 18} width="3" height="3" fill="#fff" opacity="0.6" />
-                      <rect x={sx + 2} y={sy - 18} width="3" height="3" fill="#fff" opacity="0.6" />
-                      <rect x={sx - 5} y={sy - 12} width="3" height="3" fill="#fff" opacity="0.6" />
-                      <rect x={sx + 2} y={sy - 12} width="3" height="3" fill="#fff" opacity="0.6" />
-
+                      {/* Elegant floating circular marker - refined luminous with depth */}
+                      <circle cx={sx} cy={sy} r="48" fill="none" stroke={b.color} strokeWidth="1.5" opacity="0.25" />
+                      <circle cx={sx} cy={sy} r="32" fill={b.color} stroke="#fff" strokeWidth="2" opacity="0.95" filter="url(#luminous-glow)" />
+                      <circle cx={sx} cy={sy} r="14" fill="#fff" opacity="0.1" />
                       <text 
-                        x={sx} y={sy + 4.5} 
-                        textAnchor="middle" fill="#fff" fontSize="9" fontWeight="800" letterSpacing="-0.3"
+                        x={sx} y={sy + 4} 
+                        textAnchor="middle" fill="#fff" fontSize="10" fontWeight="700" letterSpacing="-0.2"
                       >
-                        {b.label.split(' ')[0]}
+                        {b.label}
                       </text>
 
-                      {/* Count badge */}
+                      {/* Count badge - premium */}
                       {count > 0 && (
                         <g>
-                          <rect x={sx + 22} y={sy - 24} width="24" height="15" rx="7" fill="#0f172a" stroke={b.color} strokeWidth="1" />
-                          <text x={sx + 34} y={sy - 14} textAnchor="middle" fill="#e2e8f0" fontSize="9.5" fontWeight="700">{count}</text>
+                          <circle cx={sx + 38} cy={sy - 20} r="12" fill="#000" stroke={b.color} strokeWidth="1.5" />
+                          <text x={sx + 38} y={sy - 16} textAnchor="middle" fill="#e2e8f0" fontSize="9" fontWeight="600">{count}</text>
                         </g>
                       )}
                     </g>
