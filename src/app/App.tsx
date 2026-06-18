@@ -66,16 +66,16 @@ function img(id: string, w = 600, h = 400) {
 }
 
 function scoreColor(s: number) {
-  if (s >= 85) return "#1a7a38";
+  if (s >= 85) return "#1d4ed8";
   if (s >= 70) return "#b86a0a";
   return "#d4183d";
 }
 
 const BLDG_COLOR: Record<Building, string> = { peninsula: "#1d4ed8", torre300: "#d97706", paradox: "#7c3aed" };
 const STATUS_LABEL: Record<Status, string> = { negotiate: "Negociar", fast_move: "Mov. Rápido", verify: "Verificar", monitor: "Monitorear" };
-const STATUS_COLOR: Record<Status, string> = { negotiate: "#1a7a38", fast_move: "#b86a0a", verify: "#1d4ed8", monitor: "#64748b" };
-const STATUS_BG: Record<Status, string> = { negotiate: "rgba(26,122,56,0.1)", fast_move: "rgba(184,106,10,0.1)", verify: "rgba(29,78,216,0.1)", monitor: "rgba(100,116,139,0.1)" };
-const CONF_COLOR: Record<string, string> = { high: "#1a7a38", mid: "#b86a0a", low: "#d4183d" };
+const STATUS_COLOR: Record<Status, string> = { negotiate: "#1d4ed8", fast_move: "#b86a0a", verify: "#1d4ed8", monitor: "#64748b" };
+const STATUS_BG: Record<Status, string> = { negotiate: "rgba(29,78,216,0.1)", fast_move: "rgba(184,106,10,0.1)", verify: "rgba(29,78,216,0.1)", monitor: "rgba(100,116,139,0.1)" };
+const CONF_COLOR: Record<string, string> = { high: "#1d4ed8", mid: "#b86a0a", low: "#d4183d" };
 
 function ScoreBar({ val, max = 100 }: { val: number; max?: number }) {
   return (
@@ -178,7 +178,7 @@ function ListingDetailPanel({ listing, onClose }: { listing: Listing; onClose: (
                 </div>
                 <div className="detail-metric">
                   <div className="detail-metric-label">DOM</div>
-                  <div style={{ fontSize: 13, fontWeight: 700, color: listing.dom > 50 ? "#1a7a38" : "var(--color-text)", marginTop: 1, fontFamily: "var(--font-mono)" }}>{listing.dom} días</div>
+                  <div style={{ fontSize: 13, fontWeight: 700, color: listing.dom > 50 ? "#1d4ed8" : "var(--color-text)", marginTop: 1, fontFamily: "var(--font-mono)" }}>{listing.dom} días</div>
                 </div>
                 <div className="detail-metric">
                   <div className="detail-metric-label">$/m²</div>
@@ -268,7 +268,7 @@ function MarketPulseBar({ listings, formatPrice }: { listings: Listing[]; format
       <div className="pulse-left">
         <span className="pulse-dot" style={{ background: "#22c55e" }} />
         <span className="pulse-label">SF·CI</span>
-        <span className="data-status" style={{ background: "rgba(26,122,56,0.12)", color: "#1a7a38" }}>En vivo</span>
+        <span className="data-status" style={{ background: "rgba(29,78,216,0.12)", color: "#1d4ed8" }}>En vivo</span>
         <span className="pulse-sep">·</span>
         <span className="pulse-stat">{listings.length} listados</span>
         <span className="pulse-sep">·</span>
@@ -403,7 +403,7 @@ function ListingCard({ l, onClick, formatPrice }: { l: Listing; onClick: () => v
         <div style={{ position: "absolute", inset: 0, background: `linear-gradient(to top, ${bc}44 0%, transparent 60%)`, zIndex: 1 }} />
         <span className="building-card-img-badge" style={{ position: "absolute", top: 10, left: 10, zIndex: 2, background: bc + "cc" }}>{l.buildingLabel}</span>
         {l.negotiable && (
-          <span className="card-status" style={{ position: "absolute", top: 10, right: 10, zIndex: 2, background: "rgba(26,122,56,0.9)", color: "#fff" }}>Negociar</span>
+          <span className="card-status" style={{ position: "absolute", top: 10, right: 10, zIndex: 2, background: "rgba(29,78,216,0.9)", color: "#fff" }}>Negociar</span>
         )}
       </div>
       <div className="card-body">
@@ -533,7 +533,7 @@ function OverviewView({ listings, allListings, filter, onFilter, onSelect, sortB
     { dot: "#d4183d", text: "T3-2807 en Torre 300 — 172 m² 3 rec a $60k (datos Inmuebles24). Alta demanda." },
     { dot: "#b86a0a", text: "PAR-1145 Paradox 114 m² piso 45 — $50k (mant. ~$5.1k). Verificar disponibilidad." },
     { dot: "#1d4ed8", text: "PEN-1809 Peninsula amueblado 156 m² — $57k vista La Mexicana (Inmuebles24 real)." },
-    { dot: "#1a7a38", text: "Nuevo comp disponible en Paradox 210 m² a $64.9k — actualizado desde fuente primaria." },
+    { dot: "#1d4ed8", text: "Nuevo comp disponible en Paradox 210 m² a $64.9k — actualizado desde fuente primaria." },
     { dot: "#64748b", text: "Torre 300 y Península: precios $/m² mediano ~$430-465 (snapshot real listings)." },
   ];
 
@@ -638,7 +638,7 @@ function OverviewView({ listings, allListings, filter, onFilter, onSelect, sortB
             <div className={"kpi-value" + (i >= 2 ? " mono" : "")}>{k.display}</div>
             <div className="kpi-sub">{k.sub}</div>
             <div className="kpi-delta">
-              {k.delta > 0 ? <span style={{ color: "#1a7a38", fontWeight: 700, fontSize: 10 }}>↑ {k.delta}%</span>
+              {k.delta > 0 ? <span style={{ color: "#1d4ed8", fontWeight: 700, fontSize: 10 }}>↑ {k.delta}%</span>
                 : k.delta < 0 ? <span style={{ color: "#d4183d", fontWeight: 700, fontSize: 10 }}>↓ {Math.abs(k.delta)}%</span>
                 : <span style={{ color: "var(--color-text-faint)", fontSize: 10 }}>— sin cambio</span>}
             </div>
@@ -784,9 +784,9 @@ function OperatorView({ listings, onSelect, formatPrice, t }: { listings: Listin
   return (
     <div>
       <div className="negotiation-decision-banner">
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#1a7a38" strokeWidth="2"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#1d4ed8" strokeWidth="2"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
         <div className="decision-banner-text">
-          <div className="decision-banner-label" style={{ color: "#1a7a38" }}>Negotiation Workbench — Lista de acción</div>
+          <div className="decision-banner-label" style={{ color: "#1d4ed8" }}>Negotiation Workbench — Lista de acción</div>
           <div className="decision-banner-desc">Unidades ordenadas por score composite. "Negociar" = oportunidad verificada con anchor, opening script y battle card listos.</div>
         </div>
       </div>
@@ -833,7 +833,7 @@ function OperatorView({ listings, onSelect, formatPrice, t }: { listings: Listin
 function CompareView({ listings, formatPrice, t }: { listings: Listing[]; formatPrice: (n: number) => string; t: (es: string, en: string) => string }) {
   const [metric, setMetric] = useState<"psm" | "dom" | "score" | "price">("score");
 
-  const byBuilding = useMemo(() => currentBuildings.map((b: any) => {
+  const byBuilding = useMemo(() => BUILDINGS.map((b: any) => {
     const bl = listings.filter(l => l.building === b.id);
     const avgPsm = bl.length ? Math.round(bl.reduce((s, l) => s + l.price / l.sqm, 0) / bl.length) : 0;
     const avgDom = bl.length ? Math.round(bl.reduce((s, l) => s + l.dom, 0) / bl.length) : 0;
@@ -892,7 +892,7 @@ function CompareView({ listings, formatPrice, t }: { listings: Listing[]; format
                 <td style={{ fontFamily: "var(--font-mono)" }}>{formatPrice(b.avgPrice)}</td>
                 <td style={{ fontFamily: "var(--font-mono)" }}>{b.avgDom}d</td>
                 <td><span style={{ fontWeight: 700, color: scoreColor(b.avgScore) }}>{b.avgScore}</span></td>
-                <td><span style={{ background: "rgba(26,122,56,0.1)", color: "#1a7a38", padding: "2px 8px", borderRadius: 99, fontSize: 11, fontWeight: 600 }}>{b.neg}</span></td>
+                <td><span style={{ background: "rgba(29,78,216,0.1)", color: "#1d4ed8", padding: "2px 8px", borderRadius: 99, fontSize: 11, fontWeight: 600 }}>{b.neg}</span></td>
               </tr>
             ))}
           </tbody>
@@ -914,7 +914,7 @@ function AgentsView({ t }: { t: (es: string, en: string) => string }) {
         </div>
       </div>
       <div className="scorecards-grid">
-        {currentAgents.map((a: any) => (
+        {AGENTS.map((a: any) => (
           <div key={a.name} className="agent-card">
             <div className="agent-avatar">{a.name.split(" ").map(p => p[0]).join("").slice(0, 2)}</div>
             <div style={{ flex: 1, minWidth: 0 }}>
@@ -945,7 +945,7 @@ function AgentsView({ t }: { t: (es: string, en: string) => string }) {
 
 function DashboardView({ listings, currency, setCurrency, formatPrice, t }: { listings: Listing[]; currency: 'MXN'|'USD'; setCurrency: (c: 'MXN'|'USD') => void; formatPrice: (n: number) => string; t: (es: string, en: string) => string; }) {
   const domData = listings.map(l => ({ id: l.id, dom: l.dom, score: l.compositeScore }));
-  const psmData = currentBuildings.map((b: any) => {
+  const psmData = BUILDINGS.map((b: any) => {
     const bl = listings.filter(l => l.building === b.id);
     return { name: b.label, psm: bl.length ? Math.round(bl.reduce((s, l) => s + l.price / l.sqm, 0) / bl.length) : 0, color: b.color };
   });
@@ -960,8 +960,8 @@ function DashboardView({ listings, currency, setCurrency, formatPrice, t }: { li
   const DASH_KPIS = [
     { label: t("Score promedio", "Avg score"), value: Math.round(listings.reduce((s, l) => s + l.compositeScore, 0) / listings.length), suffix: "/100", color: "var(--color-primary)" },
     { label: t("DOM máximo", "Max DOM"), value: Math.max(...listings.map(l => l.dom)), suffix: t("días", "days"), color: "#d4183d" },
-    { label: t("Mejor anchor", "Best anchor"), value: formatPrice(Math.min(...listings.filter(l => l.anchor).map(l => l.anchor!))), suffix: t("apertura", "opening"), color: "#1a7a38" },
-    { label: t("Ghost alto", "High ghost"), value: currentAgents.filter((a: any) => a.ghostRate > 15).length, suffix: t("agentes", "agents"), color: "#b86a0a" },
+    { label: t("Mejor anchor", "Best anchor"), value: formatPrice(Math.min(...listings.filter(l => l.anchor).map(l => l.anchor!))), suffix: t("apertura", "opening"), color: "#1d4ed8" },
+    { label: t("Ghost alto", "High ghost"), value: AGENTS.filter((a: any) => a.ghostRate > 15).length, suffix: t("agentes", "agents"), color: "#b86a0a" },
   ];
 
   return (
@@ -1064,7 +1064,7 @@ function TrackingView({ t }: { t: (es: string, en: string) => string }) {
     { severity: "#b86a0a", id: "T3-2807", msg: "Torre 300 172 m² 3 rec @ $60k — alta rotación, confirmar piso", time: "hace 2h" },
     { severity: "#b86a0a", id: "PEN-1809", msg: "Península 156 m² amueblado $57k actualizado hoy", time: "hace 3h" },
     { severity: "#1d4ed8", id: "PAR-1145", msg: "Paradox piso 45 $50k (114 m²) — datos reales Inmuebles24", time: "hace 5h" },
-    { severity: "#1a7a38", id: "Benchmark", msg: "Inmuebles24 + Lamudi: ~246 + 109 departamentos Santa Fe activos", time: "hace 1h" },
+    { severity: "#1d4ed8", id: "Benchmark", msg: "Inmuebles24 + Lamudi: ~246 + 109 departamentos Santa Fe activos", time: "hace 1h" },
     { severity: "#64748b", id: "Haus", msg: "Haus Santa Fe 139 m² @ $40k apareció en feed", time: "hace 4h" },
   ];
   const SNAPSHOTS = [
@@ -1074,7 +1074,7 @@ function TrackingView({ t }: { t: (es: string, en: string) => string }) {
     { url: "inmuebles24.com/paradox", status: "ok", listings: 10, changed: 1, ts: "hace 4h" },
     { url: "inmuebles24.com/torre-300", status: "warn", listings: 6, changed: 0, ts: "hace 6h" },
   ];
-  const SC = { ok: "#1a7a38", warn: "#b86a0a", error: "#d4183d" };
+  const SC = { ok: "#1d4ed8", warn: "#b86a0a", error: "#d4183d" };
 
   return (
     <div>
@@ -1089,7 +1089,7 @@ function TrackingView({ t }: { t: (es: string, en: string) => string }) {
         </button>
       </div>
       <div className="tracking-kpi-row">
-        {[{ label: "Alertas activas", value: ALERTS.length, color: "#d4183d" }, { label: "Fuentes ok", value: SNAPSHOTS.filter(s => s.status === "ok").length, color: "#1a7a38" }, { label: "Cambios 24h", value: SNAPSHOTS.reduce((s, x) => s + x.changed, 0), color: "#b86a0a" }, { label: "Error/warn", value: SNAPSHOTS.filter(s => s.status !== "ok").length, color: "#d4183d" }].map(k => (
+        {[{ label: "Alertas activas", value: ALERTS.length, color: "#d4183d" }, { label: "Fuentes ok", value: SNAPSHOTS.filter(s => s.status === "ok").length, color: "#1d4ed8" }, { label: "Cambios 24h", value: SNAPSHOTS.reduce((s, x) => s + x.changed, 0), color: "#b86a0a" }, { label: "Error/warn", value: SNAPSHOTS.filter(s => s.status !== "ok").length, color: "#d4183d" }].map(k => (
           <div className="kpi-card" key={k.label} style={{ minHeight: "auto", padding: "12px 14px" }}>
             <div className="kpi-label">{k.label}</div>
             <div className="kpi-value" style={{ fontSize: "1.4rem", color: k.color }}>{k.value}</div>
@@ -1425,7 +1425,6 @@ export default function App() {
 
   return (
     <div className="sf-app" data-theme={theme}>
-      <div style={{position:'fixed',top:0,left:0,zIndex:99999,background:'red',color:'white',padding:'8px 12px',fontSize:'18px',fontWeight:'bold'}}>APP_RENDERING_OK</div>
       <MarketPulseBar listings={filteredListings} formatPrice={formatPrice} />
       <Header 
         activeView={activeView} 
