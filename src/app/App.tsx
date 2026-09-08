@@ -553,7 +553,7 @@ function OverviewView({ listings, allListings, filter, onFilter, onSelect, sortB
         <div className="overview-hero-overlay" />
         <div className="overview-hero-badge"><span className="hero-live-dot" /><span>Santa Fe CI · Abril 2026</span></div>
         <div className="overview-hero-content">
-          <div className="overview-hero-title">Panorama operativo Santa Fe</div>
+          <div className="overview-hero-title">Panorama operativo Santa&nbsp;Fe</div>
           <div className="overview-hero-sub">Arrendamiento residencial de alto valor en CDMX · Península, Torre 300 y Paradox</div>
         </div>
         <div className="overview-hero-panel" aria-label="Resumen ejecutivo del mercado">
@@ -1153,6 +1153,11 @@ function MapView({ listings, onSelect, formatPrice, t }: {
     torre300: { x: 400, y: 172 },
     paradox: { x: 590, y: 140 },
   };
+  const TOWER_SCALE = { x: 1.11, y: 1.18 };
+  function towerXY(id: Building) {
+    const p = BASE_POS[id];
+    return { x: p.x * TOWER_SCALE.x, y: p.y * TOWER_SCALE.y };
+  }
 
   // Real filtered listings for the map dots
   const mapListings = useMemo(() => {
@@ -1222,7 +1227,7 @@ function MapView({ listings, onSelect, formatPrice, t }: {
 
   // Transformed positions – pan + zoom handled via SVG group transform
   function getListingPos(l: Listing, localIndex: number) {
-    const base = BASE_POS[l.building];
+    const base = towerXY(l.building);
     const n = Math.max(1, (listingsByBldg[l.building] || []).length);
     const angle = ((localIndex % n) / n) * (Math.PI * 2) + 0.9;
     const r = 14 + (localIndex % 3) * 3.5;
@@ -1262,10 +1267,10 @@ function MapView({ listings, onSelect, formatPrice, t }: {
 
     if (next) {
       // Auto center + zoom on the tower for better UX
-      const pos = BASE_POS[id];
+      const pos = towerXY(id);
       const targetZoom = Math.max(zoom, 1.35);
-      const cx = 400; // approx center of viewBox
-      const cy = 177;
+      const cx = 500; // center of 1000×600 viewBox
+      const cy = 300;
       const newPanX = cx - pos.x * targetZoom;
       const newPanY = cy - pos.y * targetZoom;
       setZoom(targetZoom);
@@ -1578,11 +1583,11 @@ function MapView({ listings, onSelect, formatPrice, t }: {
 
               {/* Elegant floating circular markers - ultra premium with luminous depth */}
               {BUILDINGS.map((b: any) => {
-                const p = BASE_POS[b.id as Building];
+                const p = towerXY(b.id as Building);
                 const count = (listingsByBldg[b.id as Building] || []).length;
                 const isActive = focusedBldg === b.id;
-                const sx = p.x * 1.11;
-                const sy = p.y * 1.18;
+                const sx = p.x;
+                const sy = p.y;
                 return (
                   <g key={b.id} onClick={() => handleTowerClick(b.id as Building)} style={{ cursor: 'pointer' }}>
                     {/* Outer soft luminous ring */}
@@ -1834,7 +1839,14 @@ export default function App() {
   const [dataLoading, setDataLoading] = useState(true);
 
   useEffect(() => {
-    const API = 'http://localhost:3000';
+    const host = window.location.hostname;
+    const isLocal = host === "localhost" || host === "127.0.0.1";
+    if (!isLocal) {
+      setDataLoading(false);
+      return;
+    }
+
+    const API = "http://localhost:3000";
 
     async function loadData() {
       try {
@@ -1848,9 +1860,7 @@ export default function App() {
         if (buildingsRes.ok) setBuildings(await buildingsRes.json());
         if (agentsRes.ok) setAgents(await agentsRes.json());
       } catch (e) {
-        console.warn('API not available, using fallback data', e);
-        // Fallback to original hardcoded data if server not running
-        // (we'll keep the original consts below as fallback)
+        console.warn("API not available, using fallback data", e);
       } finally {
         setDataLoading(false);
       }
