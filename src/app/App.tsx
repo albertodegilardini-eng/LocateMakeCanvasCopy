@@ -1558,6 +1558,8 @@ function MapView({ listings, onSelect, formatPrice, t }: {
                 </linearGradient>
               </defs>
 
+              {/* Pan + Zoom transform group for the entire map content */}
+              <g transform={`translate(${pan.x} ${pan.y}) scale(${zoom})`}>
               {/* Pure deep void black base */}
               <rect x="0" y="0" width="1000" height="600" rx="24" fill="url(#mapBase)" />
 
@@ -1613,7 +1615,6 @@ function MapView({ listings, onSelect, formatPrice, t }: {
               <line x1="620" y1="105" x2="625" y2="455" stroke="#1a1a1a" strokeWidth="4" />
               <circle cx="210" cy="510" r="2" fill="#222" />
               <circle cx="790" cy="85" r="2.5" fill="#222" />
-            </svg>
 
                 {/* Listing dots - real data, premium treatment */}
                 {mapListings.map((l, idx) => {
